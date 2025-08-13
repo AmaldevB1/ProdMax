@@ -1,31 +1,31 @@
-name: Go Build
+name: Build and Commit Artifact
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # run manually to avoid infinite loops
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Check out code
+      - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
 
-      - name: Build
-        run: go build -o jsoneditor.exe main.go
+      - name: Build exe
+        run: go build -o artifacts/jsoneditor.exe main.go
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: jsoneditor
-          path: jsoneditor.exe
-          if-no-files-found: error
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add artifacts/jsoneditor.exe
+          git commit -m "Add latest build"
+          git push
